@@ -1,0 +1,36 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Prometheus Node Exporter
+After=network-online.target
+
+[Service]
+Type=simple
+User={{ _nextcloud_exporter_system_user }}
+Group={{ _nextcloud_exporter_system_group }}
+ExecStart={{ _nextcloud_exporter_binary_install_dir }}/nextcloud_exporter -c /etc/nextcloud_exporter/nextcloud_exporter.yml
+
+SyslogIdentifier=nextcloud_exporter
+Restart=always
+RestartSec=1
+StartLimitInterval=0
+
+PrivateTmp=yes
+{% for m in ansible_mounts if m.mount == '/home' %}
+ProtectHome=read-only
+{% else %}
+ProtectHome=yes
+{% endfor %}
+NoNewPrivileges=yes
+
+{% if nextcloud_exporter_systemd_version | int >= 232 %}
+ProtectSystem=strict
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=yes
+{% else %}
+ProtectSystem=full
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target

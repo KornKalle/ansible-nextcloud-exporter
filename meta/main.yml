@@ -1,0 +1,21 @@
+galaxy_info:
+  author: Nils Berg
+  description: An Ansible role to install and configure nextcloud prometheus exporter.
+  company: Helmholtz Zentrum Berlin für Materialien und Energie GmbH / Backslash Seven GmbH
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: EL
+      versions:
+        - 8
+    - name: Ubuntu
+      versions:
+        - precise
+        - trusty
+        - xenial
+    - name: Debian
+      versions:
+        - jessie
+  galaxy_tags:
+    - monitoring
+dependencies: []

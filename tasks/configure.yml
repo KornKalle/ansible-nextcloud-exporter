@@ -1,0 +1,46 @@
+---
+- name: Copy the nextcloud_exporter systemd service file
+  template:
+    src: nextcloud_exporter.service.j2
+    dest: /etc/systemd/system/nextcloud_exporter.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart nextcloud_exporter
+
+
+- name: Create nextcloud_exporter config directory
+  file:
+    path: "/etc/nextcloud_exporter"
+    state: directory
+    owner: root
+    group: root
+    mode: u+rwX,g+rwX,o=rX
+
+- name: Copy the nextcloud_exporter config file
+  template:
+    src: nextcloud_exporter.yml.j2
+    dest: /etc/nextcloud_exporter/nextcloud_exporter.yml
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart nextcloud_exporter
+
+- name: Allow nextcloud_exporter port in SELinux on RedHat OS family
+  seport:
+    ports: "{{ nextcloud_exporter_listen_address.split(':')[-1] }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+  when:
+    - ansible_version.full is version_compare('2.4', '>=')
+    - ansible_selinux.status == "enabled"
+
+# TODO: Write alerts
+#- name: Copy Rules file
+#  copy:
+#    src: rules/nextcloud_exporter.rules
+#    dest: /etc/prometheus/rules/nextcloud_exporter.rules
+#    owner: prometheus
+#    group: prometheus
+#  notify: restart prometheus

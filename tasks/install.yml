@@ -1,0 +1,50 @@
+---
+- name: Create the nextcloud_exporter group
+  group:
+    name: "{{ _nextcloud_exporter_system_group }}"
+    state: present
+    system: true
+  when: _nextcloud_exporter_system_group != "root"
+
+- name: Create the nextcloud_exporter user
+  user:
+    name: "{{ _nextcloud_exporter_system_user }}"
+    groups: "{{ _nextcloud_exporter_system_group }}"
+    append: true
+    shell: /usr/sbin/nologin
+    system: true
+    create_home: false
+    home: /
+  when: _nextcloud_exporter_system_user != "root"
+
+- block:
+    - name: Download nextcloud_exporter binary
+      become: false
+      get_url:
+        url: "{{ nextcloud_exporter_repository_url }}/releases/download/v{{ nextcloud_exporter_version }}/nextcloud-exporter-{{ nextcloud_exporter_version }}-amd64.bz2"
+        dest: "/tmp/nextcloud_exporter-{{ nextcloud_exporter_version }}-amd64.bz2"
+        mode: '0644'
+      register: _download_binary
+      until: _download_binary is succeeded
+      retries: 5
+      delay: 2
+      check_mode: false
+
+    - name: Unpack nextcloud_exporter binary
+      become: true
+      command: "bzip2 -dk nextcloud_exporter-{{ nextcloud_exporter_version }}-amd64.bz2"
+      args:
+        chdir: /tmp
+      check_mode: false
+
+    - name: Propagate nextcloud_exporter binaries
+      copy:
+        remote_src: yes
+        src: "/tmp/nextcloud_exporter-{{ nextcloud_exporter_version }}-amd64"
+        dest: "{{ _nextcloud_exporter_binary_install_dir }}/nextcloud_exporter"
+        mode: 0755
+        owner: root
+        group: root
+      notify: restart nextcloud_exporter
+      when: not ansible_check_mode
+  when: nextcloud_exporter_binary_local_dir | length == 0

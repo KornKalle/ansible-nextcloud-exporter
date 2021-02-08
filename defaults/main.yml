@@ -1,0 +1,32 @@
+---
+#
+## REQUIRED, you need to overwrite these
+#
+
+# URL of your nextcloud instance
+nextcloud_exporter_nc_url: ""
+# Username of an admin account
+nextcloud_exporter_nc_username: ""
+# password of this account (can also be an app password)
+nextcloud_exporter_nc_password: ""
+
+#
+## OPTIONAL, defaults will work in a clean environment
+#
+
+# nextcloud_exporter version: (can be set to 'latest')
+nextcloud_exporter_version: 0.4.0
+
+nextcloud_exporter_listen_address: "127.0.0.1:9205"
+nextcloud_exporter_timeout: "5s"
+
+# directories
+nextcloud_exporter_binary_local_dir: ""
+_nextcloud_exporter_binary_install_dir: "/usr/local/bin"
+
+# user / group
+_nextcloud_exporter_system_group: "nextcloud_exporter"
+_nextcloud_exporter_system_user: "nextcloud_exporter"
+
+# misc
+nextcloud_exporter_repository_url: "https://github.com/xperimental/nextcloud-exporter"

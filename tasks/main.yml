@@ -1,0 +1,24 @@
+---
+- import_tasks: preflight.yml
+
+- import_tasks: install.yml
+  become: true
+  when:
+    ( not __nextcloud_exporter_is_installed.stat.exists ) or
+    ( nextcloud_exporter_binary_local_dir | length > 0 )
+#    or ( __nextcloud_exporter_current_version_output.stderr_lines[0].split(" ")[2] != nextcloud_exporter_version )
+
+- import_tasks: selinux.yml
+  become: true
+  when: ansible_selinux.status == "enabled"
+
+- import_tasks: configure.yml
+  become: true
+
+- name: Ensure Node Exporter is enabled on boot
+  become: true
+  systemd:
+    daemon_reload: true
+    name: nextcloud_exporter
+    enabled: true
+    state: started

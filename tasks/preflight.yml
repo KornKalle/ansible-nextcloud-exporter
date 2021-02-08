@@ -1,0 +1,63 @@
+---
+# systemd and getting releases from GitHub code borrowed by Jeff Geerling
+- name: Assert usage of systemd as an init system
+  assert:
+    that: ansible_service_mgr == 'systemd'
+    msg: "This role only works with systemd"
+
+- name: Get systemd version
+  command: systemctl --version
+  changed_when: false
+  check_mode: false
+  register: __systemd_version
+  tags:
+    - skip_ansible_lint
+
+- name: Set systemd version fact
+  set_fact:
+    nextcloud_exporter_systemd_version: "{{ __systemd_version.stdout_lines[0] | regex_replace('^systemd\\s(\\d+).*$', '\\1') }}"
+
+
+- name: Check if nextcloud_exporter is installed
+  stat:
+    path: "{{ _nextcloud_exporter_binary_install_dir }}/nextcloud_exporter"
+  register: __nextcloud_exporter_is_installed
+  check_mode: false
+  tags:
+    - nextcloud_exporter_install
+
+# Not possible right now, as nextcloud_exporter does not support version flag
+#- name: Gather currently installed nextcloud_exporter version (if any)
+#  command: "{{ _nextcloud_exporter_binary_install_dir }}/nextcloud_exporter --version"
+#  args:
+#    warn: false
+#  changed_when: false
+#  register: __nextcloud_exporter_current_version_output
+#  check_mode: false
+#  when: __nextcloud_exporter_is_installed.stat.exists
+#  tags:
+#    - skip_ansible_lint
+
+- block:
+    - name: Get latest release
+      uri:
+        url: "{{ nextcloud_exporter_repository_url }}/releases/latest"
+        method: GET
+        return_content: true
+        status_code: 200
+        body_format: json
+        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+      no_log: "{{ not lookup('env', 'MOLECULE_DEBUG') | bool }}"
+      register: _latest_release
+      until: _latest_release.status == 200
+      retries: 5
+
+    - name: "Set nextcloud_exporter version to {{ _latest_release.json.tag_name[1:] }}"
+      set_fact:
+        nextcloud_exporter_version: "{{ _latest_release.json.tag_name[1:] }}"
+  when:
+    - nextcloud_exporter_version == "latest"
+    - nextcloud_exporter_binary_local_dir | length == 0
+  delegate_to: localhost
+  run_once: true
